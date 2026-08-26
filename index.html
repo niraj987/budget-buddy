@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budget Buddy | AI Finance & Savings Agent</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Marked JS for Markdown Parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-icon">
+        <i class="fa-solid fa-wallet"></i>
+      </div>
+      <div class="brand-text">
+        <h1>Budget Buddy</h1>
+        <span class="brand-subtitle">AI Savings & Finance Agent</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div class="model-badge">
+        <span class="pulse-dot"></span>
+        <i class="fa-solid fa-brain"></i> gemini-3.6-flash
+      </div>
+      <button id="reset-btn" class="btn btn-danger-outline" title="Reset Goal & Chat History">
+        <i class="fa-solid fa-rotate-left"></i> Reset Memory
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-container">
+
+    <!-- LEFT PANEL: Dashboard -->
+    <section class="dashboard-panel">
+      
+      <!-- Top Action Bar -->
+      <div class="dashboard-action-bar">
+        <h2><i class="fa-solid fa-chart-line"></i> Goal Dashboard</h2>
+        <div class="action-buttons">
+          <button id="open-goal-modal" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-bullseye"></i> Set Goal
+          </button>
+          <button id="open-deposit-modal" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-plus-circle"></i> Quick Deposit
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon goal-bg"><i class="fa-solid fa-bullseye"></i></div>
+          <div class="kpi-info">
+            <span class="kpi-label">Target Goal</span>
+            <h3 id="kpi-goal-amount">₹0.00</h3>
+            <span id="kpi-goal-period" class="kpi-subtext">No goal set</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon saved-bg"><i class="fa-solid fa-wallet"></i></div>
+          <div class="kpi-info">
+            <span class="kpi-label">Total Saved</span>
+            <h3 id="kpi-total-saved">₹0.00</h3>
+            <span id="kpi-saved-pct" class="kpi-subtext">0% of target</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon remaining-bg"><i class="fa-solid fa-hourglass-half"></i></div>
+          <div class="kpi-info">
+            <span class="kpi-label">Remaining Shortfall</span>
+            <h3 id="kpi-remaining-amount">₹0.00</h3>
+            <span id="kpi-deadline-date" class="kpi-subtext">Deadline: --</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress Section with Radial Gauge -->
+      <div class="card progress-card">
+        <div class="card-header">
+          <h3>Progress Status</h3>
+          <span id="status-pill" class="status-pill status-gray">No Goal Set</span>
+        </div>
+
+        <div class="progress-content">
+          <div class="radial-gauge-wrapper">
+            <svg class="radial-gauge" viewBox="0 0 120 120">
+              <circle class="gauge-bg" cx="60" cy="60" r="50"></circle>
+              <circle id="gauge-fill" class="gauge-fill" cx="60" cy="60" r="50" stroke-dasharray="314.15" stroke-dashoffset="314.15"></circle>
+            </svg>
+            <div class="gauge-center">
+              <span id="gauge-percentage" class="gauge-pct">0%</span>
+              <span class="gauge-label">Achieved</span>
+            </div>
+          </div>
+
+          <div class="progress-metrics">
+            <div class="metric-row">
+              <span>Time Elapsed:</span>
+              <strong id="metric-months-elapsed">0 / 0 months</strong>
+            </div>
+            <div class="metric-row">
+              <span>Pace Target by Now:</span>
+              <strong id="metric-expected">₹0.00</strong>
+            </div>
+            <div class="metric-row">
+              <span>Required Pace Going Forward:</span>
+              <strong id="metric-monthly-going-forward">₹0.00 / mo</strong>
+            </div>
+            
+            <div class="linear-progress-bar">
+              <div id="linear-fill" class="linear-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Catch-Up Plan Banner (Visible when behind pace) -->
+      <div id="catchup-card" class="card catchup-card hidden">
+        <div class="catchup-header">
+          <div class="catchup-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div>
+            <h3>Behind Schedule Catch-Up Plan</h3>
+            <p>The AI Agent automatically computed optimal options to reach your deadline on time.</p>
+          </div>
+        </div>
+
+        <div class="catchup-grid">
+          <div class="catchup-box standard">
+            <span class="box-tag">Standard Catch-Up</span>
+            <h4 id="catchup-standard-amount">₹0.00</h4>
+            <p>per month for remaining duration</p>
+          </div>
+          <div class="catchup-box sprint">
+            <span class="box-tag">⚡ Accelerated 3-Mo Sprint</span>
+            <h4 id="catchup-sprint-amount">₹0.00</h4>
+            <p id="catchup-sprint-label">per month for 3 months</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deposit History Log -->
+      <div class="card history-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-clock-rotate-left"></i> Savings Deposit History</h3>
+          <span id="history-count" class="badge-count">0 deposits</span>
+        </div>
+        <div class="history-list-wrapper">
+          <ul id="history-list" class="history-list">
+            <li class="empty-history"><i class="fa-solid fa-folder-open"></i> No savings logged yet. Start by typing in chat or using Quick Deposit!</li>
+          </ul>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT PANEL: AI Agent Chat -->
+    <section class="chat-panel card">
+      <div class="chat-header">
+        <div class="agent-avatar">
+          <i class="fa-solid fa-robot"></i>
+        </div>
+        <div class="agent-info">
+          <h3>Budget Buddy AI</h3>
+          <span class="agent-status"><span class="pulse-dot-green"></span> Autonomous Savings Agent</span>
+        </div>
+      </div>
+
+      <!-- Quick Suggestion Chips -->
+      <div class="suggestion-chips">
+        <button class="chip" data-prompt="I want to save ₹12,000 in 6 months"><i class="fa-solid fa-bullseye"></i> Set goal: ₹12,000 in 6 mos</button>
+        <button class="chip" data-prompt="I saved ₹1,500 today"><i class="fa-solid fa-piggy-bank"></i> Log ₹1,500 deposit</button>
+        <button class="chip" data-prompt="How am I doing overall?"><i class="fa-solid fa-chart-pie"></i> How am I doing?</button>
+        <button class="chip" data-prompt="Give me a catch-up plan"><i class="fa-solid fa-bolt"></i> Catch-up plan</button>
+      </div>
+
+      <!-- Messages Stream -->
+      <div id="chat-messages" class="chat-messages">
+        <!-- Initial Agent Welcome -->
+        <div class="message-wrapper message-agent">
+          <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
+          <div class="msg-body">
+            <div class="msg-author">Budget Buddy</div>
+            <div class="msg-content">
+              Hello! 👋 I'm <strong>Budget Buddy</strong>, your AI savings agent. Tell me your target savings goal and timeline, or log your deposits! 
+              <br><br>
+              Whenever you log savings, I'll automatically verify your progress and calculate custom catch-up plans if you fall behind pace! 🎯
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Input Bar -->
+      <form id="chat-form" class="chat-input-form">
+        <div class="input-wrapper">
+          <textarea id="chat-input" placeholder="Ask your agent (e.g. 'I saved ₹2,000 this month' or 'Save ₹50,000 in 10 months')..." rows="1"></textarea>
+          <button type="submit" id="send-btn" class="btn btn-primary btn-icon" title="Send message">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+      </form>
+    </section>
+
+  </main>
+
+  <!-- MODAL 1: Set Goal Modal -->
+  <div id="goal-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-bullseye"></i> Set New Savings Goal</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <form id="goal-form">
+        <div class="form-group">
+          <label for="goal-amount-input">Target Amount (₹)</label>
+          <div class="input-prefix-wrapper">
+            <span class="prefix">₹</span>
+            <input type="number" id="goal-amount-input" placeholder="e.g. 24000" min="1" step="any" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="goal-months-input">Time Horizon (Months)</label>
+          <input type="number" id="goal-months-input" placeholder="e.g. 12" min="1" max="120" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save Goal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Quick Deposit Modal -->
+  <div id="deposit-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-plus-circle"></i> Log Savings Deposit</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <form id="deposit-form">
+        <div class="form-group">
+          <label for="deposit-amount-input">Deposit Amount (₹)</label>
+          <div class="input-prefix-wrapper">
+            <span class="prefix">₹</span>
+            <input type="number" id="deposit-amount-input" placeholder="e.g. 1500" min="1" step="any" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-piggy-bank"></i> Log Saving</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Script -->
+  <script src="app.js"></script>
+</body>
+</html>
