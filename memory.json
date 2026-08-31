@@ -1,0 +1,17 @@
+{
+  "goal_amount": 3000.0,
+  "goal_months": 3.0,
+  "start_date": "2026-08-31",
+  "deadline_date": "2026-11-29",
+  "saved_total": 3000.0,
+  "history": [
+    {
+      "date": "2026-08-31",
+      "amount": 2000.0
+    },
+    {
+      "date": "2026-08-31",
+      "amount": 1000.0
+    }
+  ]
+}
